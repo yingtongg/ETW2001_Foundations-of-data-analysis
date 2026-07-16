@@ -1,0 +1,583 @@
+---
+title: "ETW2001 Asg 1"
+author: "34477306 Ong Ying Tong"
+format: html
+editor: visual
+---
+
+## Assignment 1
+
+## Introduction
+
+In this practice section, you will strengthen your understanding of R by applying basic data manipulation and logical operations to a real business dataset. You will practice extracting information from a data frame, performing calculations, filtering data using conditions, and summarising results to answer practical business questions. These activities are designed to build confidence in reading datasets, writing simple R expressions, and thinking logically about how data supports decision-making in real-world scenarios.
+
+## Load the Dataset
+
+Task:
+
+Load the CSV file and inspect its structure.
+
+```{r}
+library(readxl)
+library(dplyr)
+library(tidyr)
+orders_dt <- read_excel("superstore.xlsx")
+head(orders_dt)
+
+#Interpretation:
+#- Loads the dataset into a data frame.
+#- Displays sample rows and data types.
+
+```
+
+## QUESTION 1
+
+Task:
+
+A logistics manager believes that expensive deliveries are not always worth the profit they bring. Focus only on orders from countries that appear more than 200 times in the dataset. Within each of those countries, look only at transactions where the shipping expense is above that country’s own average shipping expense. Create a new measure representing the ratio of profit earned for every unit of shipping cost. Rank all such records from strongest to weakest by this measure, and report the top 15 with customer name, product name, country, sales, profit, shipping cost, and the newly created measure.
+
+```{r}
+#Count how many records each country has
+top15_profit_per_shipping_unit <- orders_dt %>%
+  group_by(Country) %>%
+  mutate(
+    count_country = n(),
+    #Calculate the average shipping cost for each country
+    avg_shipping_cost = mean(Shipping.Cost, na.rm = TRUE)
+  ) %>%
+  ungroup() %>%
+  #Keep only country with more than 200 records
+  filter(
+    count_country > 200,
+    #Keep only transcations where shipping cost is above that country's average
+    Shipping.Cost > avg_shipping_cost
+  ) %>%
+  mutate(
+    #Create a new varaible porfit per shipping cost
+    profit_per_shipping_unit = Profit / Shipping.Cost
+  ) %>%
+  #Rank from highest to lowest based on this new measure
+  arrange(desc(profit_per_shipping_unit)) %>%
+  select(
+    #Only select the required columns
+    Customer.Name,
+    Product.Name,
+    Country,
+    Sales,
+    Profit,
+    Shipping.Cost,
+    profit_per_shipping_unit
+  ) %>%
+  #Select top 15 records
+  head(15)
+
+top15_profit_per_shipping_unit
+```
+
+## 
+
+## **QUESTION 2**
+
+The regional sales director wants to know which markets are truly consistent over time rather than just occasionally lucky. For every market and year combination, compute the average profit per order, but ignore transactions with zero or negative sales. Then, only keep market-year groups that have at least 50 orders. After that, identify the markets whose yearly average profit never drops below the overall dataset median profit. Present those markets in descending order of their average sales across all remaining records. Show the first 10 rows.
+
+```{r}
+# Keep only transactions with positive sales
+# Then combine rows that belong to the same order
+order_level_dt <- orders_dt %>%
+  filter(Sales > 0) %>%
+  group_by(Market, Year, Order.ID) %>%
+  summarise(
+    # Calculate total profit for each order
+    order_profit = sum(Profit, na.rm = TRUE),
+    # Calculate the total sales for each order
+    order_sales = sum(Sales, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Calculate the overall dataset median profit using the order-level profit values
+median_profit_benchmark <- median(
+  order_level_dt$order_profit,
+  na.rm = TRUE
+)
+
+# Analyse each market-year combination using the order-level dataset
+top10_consistent_markets <- order_level_dt %>%
+  group_by(Market, Year) %>%
+  summarise(
+    # Count how many orders are in each market-year group
+    number_of_orders = n(),
+    average_profit_per_order = mean(order_profit, na.rm = TRUE),
+    average_sales = mean(order_sales, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  # Keep only market-year groups that have at least 50 orders
+  filter(number_of_orders >= 50) %>%
+  # Use group_by(Market) to check consistency across all years
+  group_by(Market) %>%
+  # Keep markets whose yearly average profit per order never falls below the overall dataset median profit
+  filter(min(average_profit_per_order, na.rm = TRUE) >= median_profit_benchmark) %>%
+  # For each remaining market, calculate average sales across all remaining records
+  summarise(
+    average_sales = mean(average_sales, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  # Sort market from highest to lowest average sales
+  arrange(desc(average_sales)) %>%
+  # Show the first 10 rows
+  head(10)
+
+top10_consistent_markets
+```
+
+## 
+
+## QUESTION 3
+
+A compliance team wants to inspect suspicious discount behavior. For each sub-category, determine a typical discount level, then isolate records where the discount is unusually high compared with others in the same sub-category. Among these suspicious records, create a new label dividing them into “loss-making” and “non-loss-making.” Then compute, by market and segment, how many suspicious records fall into each label. Finally, show only combinations where the loss-making share is above 40%, sorted from highest to lowest.
+
+```{r}
+# For each sub-category, compute the typical discount level and keep only suspicious records
+# Keep only records where the discount is higher than the median discount of the same sub-category
+suspicious_discount_dt <- orders_dt %>%
+  group_by(Sub.Category) %>%
+  mutate(
+    typical_discount = median(Discount, na.rm = TRUE)
+  ) %>%
+  ungroup() %>%
+  filter(Discount > typical_discount) %>%
+  mutate(
+    # Return loss-making if profit is smaller than 0, else return non-loss-making
+    profit_label = ifelse(Profit < 0, "loss-making", "non-loss-making")
+  )
+
+# Keep only market-segment combinations where the loss-making share is greater than 40%
+final_suspicious_discount_result <- suspicious_discount_dt %>%
+  group_by(Market, Segment) %>%
+  summarise(
+    loss_making = sum(profit_label == "loss-making"),
+    non_loss_making = sum(profit_label == "non-loss-making"),
+    total_suspicious_records = n(),
+    loss_making_share = loss_making / total_suspicious_records,
+    .groups = "drop"
+  ) %>%
+  filter(loss_making_share > 0.40) %>%
+  arrange(desc(loss_making_share), Market, Segment)
+
+final_suspicious_discount_result
+```
+
+## 
+
+## QUESTION 4
+
+An operations analyst wants to simulate a screening process across the dataset row by row. Starting from the first row and moving in dataset order, keep a running total of profit, but skip any row where quantity is less than 2. Stop the moment the running total first exceeds 25,000. Report the row at which the process stops, the corresponding order ID, customer name, and the running total at that point. Then repeat the same task after first reordering the data from highest sales to lowest, and compare the two stopping points.
+
+```{r}
+#LOOPING A (ORIGINAL DATASET)
+# Initialized the cumulative profit to 0
+cumulative_profit <- 0
+#Loop through the dataset row by row in its original order
+for (i in 1:nrow(orders_dt)) {
+  #Skip the row which quantity is less than 2
+  if (orders_dt$Quantity[i] < 2) next
+  #Add the current row profit to the cummulative profit
+  cumulative_profit <- cumulative_profit + orders_dt$Profit[i]
+  #Stop the loop immediately once it exceed 25000
+  if (cumulative_profit > 25000) {
+    original_screening_result <- data.frame(
+      screening_type = "Original dataset order",
+      screening_position = i,
+      order_id = orders_dt$Order.ID[i],
+      customer_name = orders_dt$Customer.Name[i],
+      cumulative_profit = cumulative_profit
+    )
+    break
+  }
+}
+
+#LOOPING B (ARRANGE IN DESC ORDER)
+# Reorder the dataset orders's sales from the highest to the lowest
+orders_sales_sorted <- orders_dt[order(orders_dt$Sales, decreasing = TRUE), ]
+
+#Reset the initialization for the second looping process
+cumulative_profit <- 0
+
+#Skip the row if the quantity is less than 2
+for (i in 1:nrow(orders_sales_sorted)) {
+  if (orders_sales_sorted$Quantity[i] < 2) next
+  
+  cumulative_profit <- cumulative_profit + orders_sales_sorted$Profit[i]
+  #Stop the loop once the running total first exceeds 25000
+  if (cumulative_profit > 25000) {
+    sales_sorted_screening_dt <- data.frame(
+      screening_type = "Sales Sorted From Highest to Lowest",
+      screening_position = i,
+      order_id = orders_sales_sorted$Order.ID[i],
+      customer_name = orders_sales_sorted$Customer.Name[i],
+      cumulative_profit = cumulative_profit
+    )
+    break
+  }
+}
+
+# Combine both stopping results to compare the two screening processes
+comparison_of_stopping_points <- rbind(
+  original_screening_result,
+  sales_sorted_screening_dt
+)
+
+comparison_of_stopping_points
+```
+
+## 
+
+## **QUESTION 5**
+
+The company wants to find “resilient products” that remain profitable under pressure. Restrict attention to products sold in at least 4 different countries. For each such product, calculate its average profit in records with discounts above the product’s own median discount and compare that with its average profit in records with discounts at or below that median. Create a new column capturing the gap between these two conditions. Return the products where the highdiscount condition still performs better, ordered by the size of the gap. Show the first 5 rows.
+
+```{r}
+# Count how many different countries each product is sold in
+product_country_count_dt <- orders_dt %>%
+  group_by(Product.ID, Country) %>%
+  summarise(
+    .groups = "drop"
+  ) %>%
+  group_by(Product.ID) %>%
+  summarise(
+    number_of_countries = n(),
+    .groups = "drop"
+  )
+
+# Keep only products sold in at least 4 different countries
+products_sold_in_four_countries_dt <- product_country_count_dt %>%
+  filter(number_of_countries >= 4)
+
+# Keep only records for those eligible products
+resilient_product_analysis_dt <- orders_dt %>%
+  filter(Product.ID %in% products_sold_in_four_countries_dt$Product.ID) %>%
+  group_by(Product.ID) %>%
+  mutate(
+    median_discount = median(Discount, na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+# Compare average profit in the two discount conditions
+top5_resilient_products <- resilient_product_analysis_dt %>%
+  group_by(Product.ID) %>%
+  summarise(
+    Product.Name = first(Product.Name),
+    avg_profit_high_discount = ifelse(
+      sum(Discount > median_discount) > 0,
+      mean(Profit[Discount > median_discount], na.rm = TRUE),
+      NA
+    ),
+    avg_profit_below_or_equal_median = ifelse(
+      sum(Discount <= median_discount) > 0,
+      mean(Profit[Discount <= median_discount], na.rm = TRUE),
+      NA
+    ),
+    profit_gap = avg_profit_high_discount - avg_profit_below_or_equal_median,
+    .groups = "drop"
+  ) %>%
+  filter(
+    !is.na(avg_profit_high_discount),
+    !is.na(avg_profit_below_or_equal_median),
+    profit_gap > 0
+  ) %>%
+  arrange(desc(profit_gap)) %>%
+  head(5)
+
+top5_resilient_products
+```
+
+## **QUESTION 6**
+
+A strategy team suspects that some customer segments rely too heavily on a small number of cities. Within each market, determine the total sales contributed by each city and compute that city’s share of its market’s sales. Then, for each segment, find the city with the greatest share within each market. Keep only those market-segment cases where one city contributes more than one-third of market sales. Show the dominant city, its market, its segment, and the relevant sales share in descending order (10 records).
+
+```{r}
+# Calculate total sales for each Market-Segment-City combination
+market_segment_city_sales_dt <- orders_dt %>%
+  group_by(Market, Segment, City) %>%
+  summarise(
+    city_sales_total = sum(Sales, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Compute each city's share of its market's total sales
+market_segment_city_share_dt <- market_segment_city_sales_dt %>%
+  group_by(Market) %>%
+  mutate(
+    market_sales_total = sum(city_sales_total, na.rm = TRUE),
+    city_sales_share = city_sales_total / market_sales_total
+  ) %>%
+  ungroup()
+
+# For each Market-Segment, find the city with the highest share
+dominant_city_dt <- market_segment_city_share_dt %>%
+  group_by(Market, Segment) %>%
+  arrange(desc(city_sales_share), .by_group = TRUE) %>%
+  slice(1) %>%
+  ungroup()
+
+# Keep only cases where city share > 1/3
+filtered_dominant_city_dt <- dominant_city_dt %>%
+  filter(city_sales_share > 1/3)
+
+# Select required columns and sort results
+top10_market_segment_city_share <- filtered_dominant_city_dt %>%
+  select(
+    dominant_city = City,
+    market = Market,
+    segment = Segment,
+    dominant_city_sales_share = city_sales_share
+  ) %>%
+  arrange(desc(dominant_city_sales_share)) %>%
+  head(10)
+
+top10_market_segment_city_share
+```
+
+## **QUESTION 7**
+
+A finance reviewer wants a custom profitability score that penalizes discounting and shipping burden at the same time. Construct a new score using profit, discount, and shipping cost in a sensible way so that higher score means better commercial performance. Apply this only to orders placed in the final quarter of each year. Then, within each region, identify the top-scoring product in every year. From those winners, determine which product appears most often across years within the same region, and report the result. Save the report in a table and use “View” function to display the report.
+
+```{r}
+# Higher Profit - increase the score
+# Higher Shipping.Cost - reduce the score
+# Higher Discount  - reduce the score
+# Using Discount * Sales makes the discount penalty stronger when the sale amount is large
+
+# Keep only orders placed in the final quarter of each year
+orders_final_quarter <- orders_dt %>%
+  mutate(
+    order_month = as.numeric(format(Order.Date, "%m"))
+  ) %>%
+  filter(order_month %in% c(10, 11, 12))
+
+# Create a custom profitability score
+orders_with_profitability_score <- orders_final_quarter %>%
+  mutate(
+    profitability_score = Profit - Shipping.Cost - (Sales * Discount)
+  )
+
+# Within each region and year, identify the top-scoring product
+top_product_by_region_year <- orders_with_profitability_score %>%
+  group_by(Region, Year, Product.ID) %>%
+  summarise(
+    Product.Name = first(Product.Name),
+    total_profitability_score = sum(profitability_score, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  group_by(Region, Year) %>%
+  arrange(desc(total_profitability_score), Product.ID, .by_group = TRUE) %>%
+  filter(row_number() == 1) %>%
+  ungroup()
+
+# From those winners, determine which product appears most often across years within the same region
+region_product_frequency <- top_product_by_region_year %>%
+  group_by(Region, Product.ID) %>%
+  summarise(
+    Product.Name = first(Product.Name),
+    winning_count = n(),
+    .groups = "drop"
+  )
+
+# Keep the most frequent winning product within each region
+final_region_winner_report <- region_product_frequency %>%
+  group_by(Region) %>%
+  arrange(desc(winning_count), Product.ID, .by_group = TRUE) %>%
+  filter(row_number() == 1) %>%
+  ungroup()
+
+# Save the report in a table
+region_winner_report <- final_region_winner_report
+
+View(region_winner_report)
+```
+
+## 
+
+## **QUESTION 8**
+
+A data auditor wants to test whether order priority actually matters. For each ship mode, compare the average number of days between order date and ship date across different priority levels. Ignore any records with missing or impossible date gaps. Then isolate the cases where lower urgency unexpectedly ships faster than higher urgency within the same ship mode. Count how often this happens and produce a summary sorted from the most surprising shipping mode to the least.
+
+```{r}
+prio_order <- c("Critical", "High", "Medium", "Low")
+
+# Compute the shipping gap and remove missing or impossible values
+ship_gap <- orders_dt %>%
+  mutate(
+    days_taken = as.numeric(Ship.Date - Order.Date)
+  ) %>%
+  drop_na(Ship.Mode, Order.Priority, Order.Date, Ship.Date, days_taken) %>%
+  filter(
+    days_taken >= 0,
+    Order.Priority %in% prio_order
+  )
+
+# Compute average shipping days for each ship mode and priority
+prio_avg <- ship_gap %>%
+  mutate(
+    Order.Priority = factor(Order.Priority, levels = prio_order, ordered = TRUE)
+  ) %>%
+  group_by(Ship.Mode, Order.Priority) %>%
+  summarise(
+    avg_days = mean(days_taken, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(Ship.Mode, Order.Priority)
+
+# Count how often a lower urgency level ships faster
+# than a higher urgency level within the same ship mode
+ship_mode_summary <- prio_avg %>%
+  group_by(Ship.Mode) %>%
+  summarise(
+    surprising_ship_mode_count = {
+      surprising_count <- 0
+      
+      for (i in 1:(length(prio_order) - 1)) {
+        for (j in (i + 1):length(prio_order)) {
+          higher_priority <- prio_order[i]
+          lower_priority <- prio_order[j]
+          
+          higher_priority_days <- avg_days[Order.Priority == higher_priority]
+          lower_priority_days <- avg_days[Order.Priority == lower_priority]
+          
+          if (length(higher_priority_days) > 0 && length(lower_priority_days) > 0) {
+            if (lower_priority_days < higher_priority_days) {
+              surprising_count <- surprising_count + 1
+            }
+          }
+        }
+      }
+      
+      surprising_count
+    },
+    .groups = "drop"
+  ) %>%
+  arrange(desc(surprising_ship_mode_count), Ship.Mode)
+
+ship_mode_summary
+```
+
+## **QUESTION 9**
+
+Imagine scanning through all orders week by week within each year. For every year, move through the weeks in order and track cumulative sales. However, whenever a week’s total profit is negative, pretend that week never happened and move on without adding its sales. The moment cumulative sales for a year exceed 20% of that year’s total valid sales, stop for that year and record the triggering week number. Return a table with year, triggering week, cumulative sales at the stopping point, and the number of weeks counted before stopping.
+
+```{r}
+# Summarise all orders into weekly totals within each year
+weekly_sales_profit <- orders_dt %>%
+  group_by(Year, weeknum) %>%
+  summarise(
+    total_weekly_sales = sum(Sales, na.rm = TRUE),
+    total_weekly_profit = sum(Profit, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Ignore weeks where the total weekly profit is negative
+non_negative_profit_weeks <- weekly_sales_profit %>%
+  filter(total_weekly_profit >= 0)
+
+# Get the list of years to process
+year_list <- unique(non_negative_profit_weeks$Year)
+
+# Create an empty table to store the final result
+year_week_trigger_report <- data.frame(
+  year = numeric(),
+  triggering_week = numeric(),
+  cumulative_sales = numeric(),
+  valid_weeks_counted = numeric()
+)
+
+# Process each year one by one
+for (current_year in year_list) {
+  
+  # Keep only valid weeks for the current year and sort them by week number
+  current_year_weeks <- non_negative_profit_weeks %>%
+    filter(Year == current_year) %>%
+    arrange(weeknum)
+  
+  # Calculate the sales threshold for the current year
+  total_year_valid_sales <- sum(current_year_weeks$total_weekly_sales, na.rm = TRUE)
+  trigger_sales_threshold <- 0.2 * total_year_valid_sales
+  
+  # Track cumulative sales and counted weeks 
+  cumulative_valid_sales <- 0
+  valid_weeks_counted <- 0
+  
+  # Move through the weeks in order
+  for (i in 1:nrow(current_year_weeks)) {
+    cumulative_valid_sales <- cumulative_valid_sales + current_year_weeks$total_weekly_sales[i]
+    valid_weeks_counted <- valid_weeks_counted + 1
+    
+    # Stop when cumulative sales first exceed the threshold
+    if (cumulative_valid_sales > trigger_sales_threshold) {
+      year_week_trigger_report <- rbind(
+        year_week_trigger_report,
+        data.frame(
+          year = current_year,
+          triggering_week = current_year_weeks$weeknum[i],
+          cumulative_sales = cumulative_valid_sales,
+          valid_weeks_counted = valid_weeks_counted
+        )
+      )
+      break
+    }
+  }
+}
+
+year_week_trigger_report
+```
+
+## **QUESTION 10**
+
+The executive team wants to identify “quiet underperformers,” meaning areas that do not look bad at first glance but consistently drag results down. First, work at the state and sub-category level. Keep only combinations with at least 30 rows. Create a new metric equal to profit divided by sales, and another one reflecting average shipping cost per unit sold. Then retain combinations where the profitability metric is below the dataset-wide average while the shipping-perunit metric is above the dataset-wide average. Finally, within each region, rank these underperformers by worst profitability and present the top 3 per region.
+
+```{r}
+state_subcategory_performance <- orders_dt %>%
+  group_by(Region, State, Sub.Category) %>%
+  summarise(
+    number_of_records = n(),
+    profitability_metric = ifelse(
+      sum(Sales, na.rm = TRUE) == 0,
+      NA,
+      sum(Profit, na.rm = TRUE) / sum(Sales, na.rm = TRUE)
+    ),
+    shipping_cost_per_unit_sold = ifelse(
+      sum(Quantity, na.rm = TRUE) == 0,
+      NA,
+      sum(Shipping.Cost, na.rm = TRUE) / sum(Quantity, na.rm = TRUE)
+    ),
+    .groups = "drop"
+  ) %>%
+  filter(number_of_records >= 30)
+
+dt_avg_profitability <- mean(
+  state_subcategory_performance$profitability_metric,
+  na.rm = TRUE
+)
+
+dt_avg_shipping_per_unit <- mean(
+  state_subcategory_performance$shipping_cost_per_unit_sold,
+  na.rm = TRUE
+)
+
+top3_quiet_underperformers_by_region <- state_subcategory_performance %>%
+  filter(
+    profitability_metric < dt_avg_profitability,
+    shipping_cost_per_unit_sold > dt_avg_shipping_per_unit
+  ) %>%
+  group_by(Region) %>%
+  arrange(profitability_metric, .by_group = TRUE) %>%
+  filter(row_number() <= 3) %>%
+  ungroup() %>%
+  select(
+    Region,
+    State,
+    Sub.Category,
+    number_of_records,
+    profitability_metric,
+    shipping_cost_per_unit_sold
+  )
+top3_quiet_underperformers_by_region
+```
