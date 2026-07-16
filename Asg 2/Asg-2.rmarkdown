@@ -1,0 +1,75 @@
+---
+title: "ETW2001 Asg 2"
+author: "34477306 Ong Ying Tong"
+format: html
+editor: visual
+---
+
+## Assignment 2
+
+## Introduction
+
+## Load the Dataset
+
+Load the CSV file and inspect its structure.
+
+```{r}
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(naniar)
+
+orders_dt <- read_excel("superstore.xlsx")
+income_dt <- read_excel("income.xlsx")
+unemployment_dt <- read.csv("Unemployment Rates for States.csv")
+gdp_dt <- read.csv("gdp.csv", skip = 3)
+
+head(orders_dt)
+names(orders_dt)
+
+head(income_dt)
+names(income_dt)
+
+head(unemployment_dt)
+names(unemployment_dt)
+
+head(gdp_dt)
+names(gdp_dt)
+
+```
+
+## Tasks 1
+
+Clean all the data
+
+Clean Superstore Dataset
+
+```{r}
+orders_clean <- orders_dt %>%
+  mutate(
+    Order_Date = as.Date(Order.Date),
+    Ship_Date = as.Date(Ship.Date),
+    Month = as.numeric(format(Order_Date, "%m"))
+  ) %>%
+  select(
+    Order_Date,
+    Ship_Date,
+    Year,
+    Month,
+    State,
+    Region,
+    Category,
+    Sub.Category,
+    Sales,
+    Profit,
+    Quantity,
+    Discount,
+    Shipping.Cost,
+    Segment,
+    Ship.Mode
+  )
+
+head(orders_clean)
+colSums(is.na(orders_clean))
+```
+

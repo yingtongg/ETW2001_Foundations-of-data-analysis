@@ -1,0 +1,162 @@
+---
+title: "ETW2001 Asg 2"
+author: "34477306 Ong Ying Tong"
+format: html
+editor: visual
+---
+
+## Assignment 2
+
+## Introduction
+
+## Load the Dataset
+
+Load the CSV file and inspect its structure.
+
+```{r}
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(naniar)
+
+orders_dt <- read_excel("superstore.xlsx")
+income_dt <- read.csv("income.csv", skip = 4,stringsAsFactors = FALSE)
+unemployment_dt <- read.csv("Unemployment Rates for States.csv",stringsAsFactors = FALSE)
+gdp_dt <- read.csv("gdp.csv", skip = 3,stringsAsFactors = FALSE)
+
+head(orders_dt)
+names(orders_dt)
+
+head(income_dt)
+names(income_dt)
+
+head(unemployment_dt)
+names(unemployment_dt)
+
+head(gdp_dt)
+names(gdp_dt)
+
+```
+
+## Tasks 1
+
+Clean all the data
+
+Clean Superstore Dataset
+
+```{r}
+orders_clean <- orders_dt %>%
+  filter(Country == "United States") %>%
+  mutate(
+    Order_Date = as.Date(Order.Date),
+    Ship_Date = as.Date(Ship.Date),
+    Month = as.numeric(format(Order_Date, "%m"))
+  ) %>%
+  select(
+    Order_Date,
+    Ship_Date,
+    Year,
+    Month,
+    Country,
+    State,
+    Region,
+    Category,
+    Sub.Category,
+    Sales,
+    Profit,
+    Quantity,
+    Discount,
+    Shipping.Cost,
+    Segment,
+    Ship.Mode
+  )
+
+head(orders_clean)
+colSums(is.na(orders_clean))
+```
+
+```{r}
+unemployment_clean <- unemployment_dt %>%
+  select(
+    State,
+    Unemployment = `Unemployment_Rates_for_States`
+  ) %>%
+  filter(State != "District of Columbia")
+
+head(unemployment_clean)
+colSums(is.na(unemployment_clean))
+```
+
+```{r}
+gdp_clean <- gdp_dt %>%
+  select(
+    State = GeoName,
+    GDP = X2023
+  ) %>%
+  filter(
+    State != "United States",
+    State != "District of Columbia",
+    !is.na(GDP)
+  )
+
+head(gdp_clean)
+colSums(is.na(gdp_clean))
+```
+
+```{r}
+income_clean <- income_dt %>%
+  select(
+    State,
+    Income = Value..Dollars.
+  ) %>%
+  filter(
+    State != "United States",
+    State != "Puerto Rico",
+    State != "District of Columbia",
+    !is.na(Income)
+  )
+
+head(income_clean)
+colSums(is.na(income_clean))
+```
+
+```{r}
+state_summary <- orders_clean %>%
+  group_by(State) %>%
+  summarise(
+    Total_Sales = sum(Sales, na.rm = TRUE),
+    Total_Profit = sum(Profit, na.rm = TRUE),
+    Total_Quantity = sum(Quantity, na.rm = TRUE)
+  )
+
+state_data <- state_summary %>%
+  left_join(income_clean, by = "State") %>%
+  left_join(unemployment_clean, by = "State") %>%
+  left_join(gdp_clean, by = "State")
+
+state_data <- state_data %>%
+  filter(
+    !is.na(Income),
+    !is.na(Unemployment),
+    !is.na(GDP)
+  )
+
+head(state_data)
+colSums(is.na(state_data))
+```
+
+```{r}
+write.csv(orders_clean, "clean_superstore.csv", row.names = FALSE)
+write.csv(unemployment_clean, "clean_unemployment.csv", row.names = FALSE)
+write.csv(gdp_clean, "clean_gdp.csv", row.names = FALSE)
+write.csv(income_clean, "clean_income.csv", row.names = FALSE)
+write.csv(state_data, "final_merged_data.csv", row.names = FALSE)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```

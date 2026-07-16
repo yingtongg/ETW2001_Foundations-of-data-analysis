@@ -1,0 +1,67 @@
+﻿Income (Median household income) by State,,,
+"All Races (includes Hispanic/Latino), Both Sexes, All Ages, 2019-2023",,,
+Sorted by Value,,,
+,,,
+State,FIPS,Value (Dollars),Rank within US (of 52 states)
+United States,00000,"78,538",N/A
+Puerto Rico,72001,"25,096",52
+Mississippi,28000,"54,915",51
+West Virginia,54000,"57,917",50
+Arkansas,05000,"58,773",49
+Louisiana,22000,"60,023",48
+Alabama,01000,"62,027",47
+New Mexico,35000,"62,125",46
+Kentucky,21000,"62,417",45
+Oklahoma,40000,"63,603",44
+South Carolina,45000,"66,818",43
+Tennessee,47000,"67,097",42
+Missouri,29000,"68,920",41
+Ohio,39000,"69,680",40
+North Carolina,37000,"69,904",39
+Montana,30000,"69,922",38
+Indiana,18000,"70,051",37
+Michigan,26000,"71,149",36
+Florida,12000,"71,711",35
+Maine,23000,"71,773",34
+South Dakota,46000,"72,421",33
+Kansas,20000,"72,639",32
+Iowa,19000,"73,147",31
+Idaho,16000,"74,636",30
+Georgia,13000,"74,664",29
+Wyoming,56000,"74,815",28
+Nebraska,31000,"74,985",27
+Nevada,32000,"75,561",26
+Wisconsin,55000,"75,670",25
+North Dakota,38000,"75,949",24
+Pennsylvania,42000,"76,081",23
+Texas,48000,"76,292",22
+Arizona,04000,"76,872",21
+Vermont,50000,"78,024",20
+Oregon,41000,"80,426",19
+Illinois,17000,"81,702",18
+Delaware,10000,"82,855",17
+New York,36000,"84,578",16
+Rhode Island,44000,"86,372",15
+Minnesota,27000,"87,556",14
+Alaska,02900,"89,336",13
+Virginia,51000,"90,974",12
+Utah,49000,"91,750",11
+Colorado,08000,"92,470",10
+Connecticut,09000,"93,760",9
+Washington,53000,"94,952",8
+New Hampshire,33000,"95,628",7
+California,06000,"96,334",6
+Hawaii,15000,"98,317",5
+New Jersey,34000,"101,050",4
+Massachusetts,25000,"101,341",3
+Maryland,24000,"101,652",2
+District of Columbia,11001,"106,287",1
+,,,
+Suggested Citation:,,,
+HDPulse: An Ecosystem of Minority Health and Health Disparities Resources. National Institute on Minority Health and Health Disparities. Created 4/29/2026. Available from https://hdpulse.nimhd.nih.gov,,,
+,,,
+Notes:,,,
+"NA: Data not available [http://hdpulse.nimhd.nih.gov/data/datanotavailable.html] for this combination of geography, cancer site, age, and race/ethnicity.",,,
+Source: Demographic data provided by the Census Bureau (http://www.census.gov/) & the American Community Survey (http://www.census.gov/acs/www/).,,,
+"For more information about Income (Median household income), see the dictionary at http://hdpulse.nimhd.nih.gov/dictionary.php#income.",,,
+"Median Incomes over 250,000 have been coded to 250,001 by the Census Bureau. [ http://www2.census.gov/acs2012_5yr/summaryfile/ACS_2008-2012_SF_Tech_Doc.pdf ]",,,

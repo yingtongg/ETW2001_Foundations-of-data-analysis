@@ -1,0 +1,67 @@
+SAGDP1 State annual gross domestic product (GDP) summary,,
+SAGDP1 State annual gross domestic product (GDP) summary,,
+State or DC,,
+GeoFIPS,GeoName,2023
+00000,United States,27811517
+01000,Alabama,309543.8
+02000,Alaska,68232.7
+04000,Arizona,530105
+05000,Arkansas,178114.8
+06000,California,3827007.3
+08000,Colorado,533268.6
+09000,Connecticut,341851.8
+10000,Delaware,103332.5
+11000,District of Columbia,174250.7
+12000,Florida,1624642.3
+13000,Georgia,835755.3
+15000,Hawaii,111740.2
+16000,Idaho,120588.1
+17000,Illinois,1100794.1
+18000,Indiana,496849.5
+19000,Iowa,253166.5
+20000,Kansas,224851.3
+21000,Kentucky,283267.7
+22000,Louisiana,318044.3
+23000,Maine,93743.8
+24000,Maryland,515035.9
+25000,Massachusetts,737867.4
+26000,Michigan,676030.8
+27000,Minnesota,483222
+28000,Mississippi,151511.9
+29000,Missouri,428887.3
+30000,Montana,74690.3
+31000,Nebraska,183780.9
+32000,Nevada,253443.3
+33000,New Hampshire,114427.8
+34000,New Jersey,806894
+35000,New Mexico,138526
+36000,New York,2182549
+37000,North Carolina,794838
+38000,North Dakota,77898.1
+39000,Ohio,883957.1
+40000,Oklahoma,255933.2
+41000,Oregon,314895
+42000,Pennsylvania,966444
+44000,Rhode Island,76313.5
+45000,South Carolina,332946.8
+46000,South Dakota,74458.8
+47000,Tennessee,531246.8
+48000,Texas,2637237.6
+49000,Utah,283230.8
+50000,Vermont,43931.6
+51000,Virginia,722767.4
+53000,Washington,801455.5
+54000,West Virginia,101479.9
+55000,Wisconsin,431913.9
+56000,Wyoming,51350.1
+91000,New England,1408135.9
+92000,Mideast,4748506.1
+93000,Great Lakes,3589545.5
+94000,Plains,1726264.9
+95000,Southeast,6184158.9
+96000,Southwest,3561801.9
+97000,Rocky Mountain,1063127.8
+98000,Far West,5376774
+,,
+Legend/Footnotes,,
+"  Last updated: April 9, 2026-- new statistics for 2025.",,
